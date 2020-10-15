@@ -1,0 +1,21 @@
+{
+  "name": "restaurantsapi",
+  "version": "1.0.0",
+  "description": "Restaurant API that displays 10 restaurants with 5 menus each. A user must register and login to view all information and can like or dislike a menu",
+  "main": "app.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "nodemon app.js"
+  },
+  "author": "Chian Yein",
+  "license": "ISC",
+  "dependencies": {
+    "bcryptjs": "^2.4.3",
+    "dotenv": "^8.2.0",
+    "express": "^4.17.1",
+    "express-validator": "^6.6.1",
+    "jsonwebtoken": "^8.5.1",
+    "mysql2": "^2.2.5",
+    "sequelize": "^6.3.5"
+  }
+}
