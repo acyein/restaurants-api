@@ -3,11 +3,11 @@ const { DataTypes } = require('sequelize');
 const sequelize = require('../util/database');
 
 const Action = sequelize.define('action', {
-    actionBy: {
+    action_by: {
         type: DataTypes.STRING,
         primaryKey: true
     },
-    thumbsUp: {
+    thumbs_up: {
         type: DataTypes.BOOLEAN
     }
 });

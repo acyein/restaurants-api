@@ -3,68 +3,51 @@ const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 
 exports.registerUser = (req, res, next) => {
-    // Check if user's email exists in db
-    User.findOne({ where: {
-        email: req.body.email
-    } })
-    .then(emailExists => {
-        console.log(emailExists);
-        if(emailExists) return res.status(400).send('Email already exists');
-    })
-    
-    // Hash password
-    bcrypt.genSalt(10)
-    .then(salt => {
-        bcrypt.hash(req.body.password, salt)
-        .then(hashedPassword => {
-            // Create new user in db
-            console.log(hashedPassword);
-            User
-                .create({
-                    username: req.body.username,
-                    email: req.body.email,
-                    password: hashedPassword
+    User.findOne({ where: { email: req.body.email } })
+        .then(user => {
+            if (user) {
+                return res.status(400).send('Email already exists');
+            }
+            bcrypt.genSalt(10, (err, salt) => {
+                if (err) throw err;
+                bcrypt.hash(req.body.password, salt, (err, hashedPassword) => {
+                    if (err) throw err;
+                    User.create({
+                            username: req.body.username,
+                            email: req.body.email,
+                            password: hashedPassword
+                        })
+                        .then(savedUser => {
+                            res.json({
+                                message: 'Success! You are now registered',
+                                userInfo: savedUser
+                            });
+                        })
                 })
-                .then(savedUser => {
-                    res.json({
-                        message: 'Success! You are now registered',
-                        userInfo: savedUser
-                    });
-                })
-                .catch(err => {
-                    console.log(err);
-                });
-    
+            })
         })
-    })
-   
-}
+        .catch(err => res.status(400).send(err));
+};
 
 exports.loginUser = (req, res, next) => {
-    // Find email in db
-    // console.log(req.body.email);
-    User.findOne({ 
-        where: {
-            email: req.body.email 
-        }
-    })
-    .then(user => {
-        console.log(user);
-        // Check if password is correct
-        // Compare pw from input and hashed pw from db
-        const validPass = bcrypt.compare(req.body.password, user.password);
-        if(!validPass) return res.status(400).send('Incorrect password');
-        const token = jwt.sign({ _id: user.user_id }, 'jsdlfgjdfg');
-        res.json({
-            message: 'Success! You are now logged in',
-            info: user,
-            token: token
-        });
-    })
-    .catch(err => {
-        console.log(err);
-        res.status(400).json({
-            message: 'An error occurred'
+    User.findOne({ where: { email: req.body.email } })
+        .then(user => {
+            if (!user) {
+                return res.status(400).send('User does not exist');
+            }
+            bcrypt.compare(req.body.password, user.password, (err, data) => {
+                if (err) throw err;
+                if (data) {
+                    const token = jwt.sign({ _id: user.id }, process.env.TOKEN_SECRET);
+                    return res.status(200).json({
+                        message: 'Success! You are now logged in',
+                        info: user,
+                        token: token
+                    })
+                } else {
+                    res.status(401).send('Incorrect password');
+                }
+            });
         })
-    });
-}
+        .catch(err => res.status(400).send(err));
+};

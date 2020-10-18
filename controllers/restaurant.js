@@ -1,58 +1,82 @@
+const { response } = require('express');
+const jwt = require('jsonwebtoken');
 const Restaurant = require('../models/restaurant');
 const Menu = require('../models/menu');
 const Action = require('../models/action');
+const User = require('../models/user');
+
+function generateAccessToken(userId) {
+    return jwt.sign(userId, process.env.TOKEN_SECRET);
+};
 
 exports.getAllRestaurants = (req, res, next) => {
-    // Find all restaurants in db
-    Restaurant.findAll({ raw: true }) // raw: true to get actual data instead of object instance
-    .then(restaurants => {
-        // console.log(restaurants);
-        res.send(restaurants);
-    })
-    .catch(err => {
-        res.status(400).json({
-            message: err.message || 'An error occurred while retrieving restaurants'
-        });
-    });
+    Restaurant
+        // .findAll({ raw: true }) // raw: true to get actual data instead of object instance
+        .findAll()
+        .then(restaurants => {
+            const token = generateAccessToken({ _id: user.id });
+            res.json({
+                restaurants: restaurants
+            })
+        })
+        .catch(err => res.status(400).send(err));
 };
 
 exports.getOneRestaurant = (req, res, next) => {
-    // Find specific restaurant in db
     const restaurantId = req.params.restaurantId;
-    Restaurant.findByPk(restaurantId)
-    .then(foundRestaurant => {
-        console.log(foundRestaurant);
-        res.json(foundRestaurant);
-    })
-    .catch(err => {
-        res.status(400).json({
-            message: err.message || 'An error occurred while retrieving the restaurant'
-        });
-    });
+    Restaurant
+        .findByPk(restaurantId)
+        .then(foundRestaurant => {
+            res.json({
+                restaurant: foundRestaurant
+            });
+        })
+        .catch(err => res.status(400).send(err));
 };
 
 exports.getAllMenus = (req, res, next) => {
     const restaurantId = req.params.restaurantId;
-    Restaurant.findByPk(restaurantId, {raw: true})
-    .then(foundRestaurant => {
-        console.log(foundRestaurant);
-        Menu.findAll({ 
-            where: { 
-                restaurantRestaurantId: foundRestaurant.restaurant_id
-            },
-            raw: true
+    Restaurant
+        .findByPk(restaurantId, { include: 'menus' })
+        .then(foundRestaurant => {
+            res.json({ 
+                restaurant: foundRestaurant 
+            });
         })
-        .then(menus => {
-            console.log(menus);
+        .catch(err => res.status(400).send(err));
+    };
+    
+exports.getOneMenu = (req, res, next) => {
+    // Use restaurant name and check against menu
+    const restaurantId = req.params.restaurantId;
+    const menuId = req.params.menuId;
+    Restaurant.findByPk(restaurantId)
+        .then(foundRestaurant => {
+            Menu.findByPk(menuId) // Don't need to use findByPk; find through menu and not restaurant
+            .then(foundMenu => {
+                // console.log(menus);
+                res.json({
+                    restaurant: foundRestaurant,
+                    menu: foundMenu
+                });
+            })
         })
-    })
-    .catch(err => {
-        res.status(400).json({
-            message: err.message || 'An error occurred while retrieving menus from the restaurant'
-        });
-    });
+        .catch(err => res.status(400).send(err));
 };
 
 exports.postAction = (req, res, next) => {
-    
+    const restaurantId = req.params.restaurantId;
+    const menuId = req.params.menuId;
+    Restaurant
+        .findByPk(restaurantId)
+        .then(foundRestaurant => {
+            Menu.findByPk(menuId)
+            .then(foundMenu => {
+                User.findOne({
+                    where: { email: req.body.email }
+                })
+                console.log(foundMenu);
+            })
+        })
+        .catch(err => res.status(400).send(err));
 };
